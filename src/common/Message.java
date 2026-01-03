@@ -7,7 +7,8 @@ public class Message implements Serializable {
 
     private String sender;
     private String content;
-    private String type; // "LOGIN", "CHAT", "SUCCESS", "FAIL"
+    private String type;
+    // "LOGIN", "CHAT", "SUCCESS", "FAIL", "LOGOUT", "USER_OFFLINE"
     private long timestamp;
 
     public Message(String sender, String content, String type) {
@@ -17,11 +18,21 @@ public class Message implements Serializable {
         this.timestamp = System.currentTimeMillis();
     }
 
-    // Getters and Setters
-    public String getSender() { return sender; }
-    public String getContent() { return content; }
-    public String getType() { return type; }
-    public long getTimestamp() { return timestamp; }
+    public String getSender() {
+        return sender;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
 
     @Override
     public String toString() {

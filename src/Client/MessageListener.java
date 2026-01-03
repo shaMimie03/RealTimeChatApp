@@ -4,12 +4,13 @@ import common.Message;
 import java.io.ObjectInputStream;
 
 public class MessageListener implements Runnable {
-    private ObjectInputStream in;
-    private ClientApp clientApp;
 
-    public MessageListener(ObjectInputStream in, ClientApp clientApp) {
+    private ObjectInputStream in;
+    private ClientApp app;
+
+    public MessageListener(ObjectInputStream in, ClientApp app) {
         this.in = in;
-        this.clientApp = clientApp;
+        this.app = app;
     }
 
     @Override
@@ -18,8 +19,7 @@ public class MessageListener implements Runnable {
             while (true) {
                 Object obj = in.readObject();
                 if (obj instanceof Message) {
-                    Message msg = (Message) obj;
-                    clientApp.handleIncomingMessage(msg);
+                    app.handleIncomingMessage((Message) obj);
                 }
             }
         } catch (Exception e) {
