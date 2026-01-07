@@ -12,7 +12,7 @@ import java.util.*;
 
 public class ClientApp extends JFrame {
 
-    private static final String SERVER_ADDRESS = "10.143.144.59";
+    private static final String SERVER_ADDRESS = "10.175.27.240";
     private static final int SERVER_PORT = 12345;
     private final Map<String, java.util.List<Message>> localHistory = new HashMap<>();
     private String currentTopic = "";
@@ -314,7 +314,7 @@ public class ClientApp extends JFrame {
         }
     }
 
-    // Requirement (e): Public method to allow MessageListener to push data to UI
+    // Public method to allow MessageListener to push data to UI
     public void handleIncomingObject(Object obj) {
         if (obj instanceof String) {
             String raw = (String) obj;
