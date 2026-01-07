@@ -3,9 +3,9 @@ package Server;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -14,8 +14,11 @@ public class ChatServer {
     private ExecutorService threadPool;
     private UserManager userManager;
 
+    //  Synchronized set to manage active client handlers for broadcasting
+    private static Set<ClientHandler> activeClients = Collections.synchronizedSet(new HashSet<>());
+
     public ChatServer() {
-        // Requirement: Concurrency Load (at least 30 users)
+        // Concurrency Load (at least 30 users)
         threadPool = Executors.newFixedThreadPool(30);
         userManager = new UserManager();
     }
@@ -29,7 +32,11 @@ public class ChatServer {
                 System.out.println("New client connected: " + clientSocket.getInetAddress());
 
                 // Create handler and submit to thread pool
-                ClientHandler handler = new ClientHandler(clientSocket, userManager);
+                ClientHandler handler = new ClientHandler(clientSocket, userManager, this);
+
+                // Add to active clients list for broadcasting
+                activeClients.add(handler);
+
                 threadPool.execute(handler);
             }
         } catch (IOException e) {
@@ -37,8 +44,28 @@ public class ChatServer {
         }
     }
 
+    // Use Parallel Streams for efficient broadcasting
+    public void broadcastUserList() {
+        StringBuilder userList = new StringBuilder("UPDATE_USERS:");
+        synchronized (activeClients) {
+            for (ClientHandler client : activeClients) {
+                if (client.getUsername() != null) {
+                    userList.append(client.getUsername()).append(",");
+                }
+            }
+        }
+
+        // Use parallel stream to send the list to everyone instantly
+        activeClients.parallelStream().forEach(client -> client.sendMessage(userList.toString()));
+    }
+
+    public void removeClient(ClientHandler handler) {
+        activeClients.remove(handler);
+        broadcastUserList(); // Update others when someone leaves
+    }
+
     public static void main(String[] args) {
-        //c. Implement joining threads
+        // Implement joining threads
         Thread setupThread = new Thread(() -> {
             System.out.println(">> Setup Thread: Initializing Database...");
             DatabaseSetup.initializeDatabase();
@@ -47,7 +74,7 @@ public class ChatServer {
         setupThread.start();
 
         try {
-            // The main server thread will PAUSE here until setupThread finishes completely.
+            // Wait for database initialization to finish before starting server
             setupThread.join();
             System.out.println(">> Setup Thread joined. Server starting now.");
         } catch (InterruptedException e) {

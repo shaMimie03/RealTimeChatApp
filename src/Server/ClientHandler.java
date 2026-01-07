@@ -11,14 +11,22 @@ import java.net.Socket;
 public class ClientHandler implements Runnable {
     private Socket socket;
     private UserManager userManager;
+    private ChatServer server; // Reference to the main server for broadcasting
     private ObjectOutputStream out;
     private ObjectInputStream in;
     private String username;
     private boolean isRunning = true;
 
-    public ClientHandler(Socket socket, UserManager userManager) {
+    // Requirement (a): Constructor updated to accept 3 arguments
+    public ClientHandler(Socket socket, UserManager userManager, ChatServer server) {
         this.socket = socket;
         this.userManager = userManager;
+        this.server = server;
+    }
+
+    // Requirement: Getter for ChatServer to retrieve username for the list update
+    public String getUsername() {
+        return username;
     }
 
     @Override
@@ -57,8 +65,7 @@ public class ClientHandler implements Runnable {
             if (valid) {
                 this.username = msg.getSender();
 
-                // b. Implement thread influencing
-                // Boost CPU scheduling priority for admin users to demonstrate concurrency control
+                // Requirement (b): Implement thread influencing
                 if ("admin".equalsIgnoreCase(username)) {
                     Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
                     System.out.println(">> Thread priority set to MAX for Admin: " + username);
@@ -69,6 +76,10 @@ public class ClientHandler implements Runnable {
                 // Register the handler in the thread-safe user manager
                 userManager.registerHandler(username, this);
                 sendMessage(new Message("Server", "Login Successful", "SUCCESS"));
+
+                // Requirement (e): Trigger server to broadcast updated list to everyone
+                server.broadcastUserList();
+
                 System.out.println("User registered in system: " + username);
             } else {
                 sendMessage(new Message("Server", "Invalid Credentials", "FAIL"));
@@ -76,8 +87,7 @@ public class ClientHandler implements Runnable {
         } else if ("CHAT".equals(msg.getType())) {
             System.out.println("Broadcast from " + username + ": " + msg.getContent());
 
-            // Save message to database categorized by topic
-            // Note: Currently defaults to "General Discussion" for the Lobby flow
+            // Requirement (g): Save message to "General Discussion" topic only
             ChatHistory.saveMessage(msg, "General Discussion");
 
             // Broadcast the message to all active users
@@ -86,7 +96,20 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * Sends a message object back to the specific client connected to this handler.
+     * Requirement: Overloaded sendMessage for String data (User List updates).
+     * @param rawMessage The raw string to send.
+     */
+    public void sendMessage(String rawMessage) {
+        try {
+            out.writeObject(rawMessage);
+            out.flush();
+        } catch (IOException e) {
+            System.err.println("Error sending raw string to " + username);
+        }
+    }
+
+    /**
+     * Sends a message object back to the specific client.
      * @param msg The message to send.
      */
     public void sendMessage(Message msg) {
@@ -104,6 +127,8 @@ public class ClientHandler implements Runnable {
     private void closeConnection() {
         if (username != null) {
             userManager.unregisterHandler(username);
+            // Requirement (e): Notify server to remove client and update list
+            server.removeClient(this);
         }
         try {
             if (socket != null) socket.close();

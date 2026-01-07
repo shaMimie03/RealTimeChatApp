@@ -12,7 +12,7 @@ import java.util.*;
 
 public class ClientApp extends JFrame {
 
-    private static final String SERVER_ADDRESS = "192.168.56.1";
+    private static final String SERVER_ADDRESS = "10.143.144.59";
     private static final int SERVER_PORT = 12345;
     private final Map<String, java.util.List<Message>> localHistory = new HashMap<>();
     private String currentTopic = "";
@@ -25,22 +25,21 @@ public class ClientApp extends JFrame {
     private CardLayout cardLayout;
     private JPanel mainPanel;
 
-    // Login
+    // Login UI components
     private JTextField userField;
     private JPasswordField passField;
 
-    // Chat
+    // Chat UI components
     private JPanel chatPanel;
     private JScrollPane scrollPane;
     private JTextField messageField;
     private JLabel statusLabel;
 
-    // Online users
+    // Online users UI components
     private DefaultListModel<String> onlineModel;
     private JList<String> onlineList;
-    private Set<String> onlineUsers = new HashSet<>();
 
-    // Colors
+    // Design Colors
     private final Color BG_MAIN = new Color(31, 41, 51);
     private final Color BG_PANEL = new Color(45, 55, 72);
     private final Color BG_INPUT = new Color(55, 65, 81);
@@ -61,14 +60,14 @@ public class ClientApp extends JFrame {
         mainPanel = new JPanel(cardLayout);
 
         mainPanel.add(createLoginPanel(), "LOGIN");
-        mainPanel.add(createLobbyPanel(), "LOBBY"); // Fixed: Call Lobby Panel
+        mainPanel.add(createLobbyPanel(), "LOBBY");
         mainPanel.add(createChatPanel(), "CHAT");
 
         add(mainPanel);
         setVisible(true);
     }
 
-    /* ================= LOGIN ================= */
+    /* ================= LOGIN PANEL ================= */
 
     private JPanel createLoginPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
@@ -104,7 +103,7 @@ public class ClientApp extends JFrame {
         return panel;
     }
 
-    /* ================= CHAT LOBBY ================= */
+    /* ================= CHAT LOBBY PANEL ================= */
 
     private JPanel createLobbyPanel() {
         JPanel panel = new JPanel(new BorderLayout());
@@ -117,55 +116,49 @@ public class ClientApp extends JFrame {
         title.setBorder(new EmptyBorder(0, 0, 20, 0));
         panel.add(title, BorderLayout.NORTH);
 
-        // Use BoxLayout to keep buttons from stretching vertically
         JPanel roomsContainer = new JPanel();
         roomsContainer.setLayout(new BoxLayout(roomsContainer, BoxLayout.Y_AXIS));
         roomsContainer.setBackground(BG_MAIN);
 
-        String[] topics = {"General Discussion", "Project Team", "Emergency Alerts"};
+        String[] topics = {"General Discussion"};
         for (String topic : topics) {
             JButton roomBtn = new JButton(topic);
             styleButton(roomBtn);
-
-            // Adjust button size so they aren't massive
             roomBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
-            roomBtn.setMaximumSize(new Dimension(300, 50)); // Fixed size
+            roomBtn.setMaximumSize(new Dimension(300, 50));
 
             roomBtn.addActionListener(e -> {
                 currentTopic = topic;
-                //setTitle
-
+                setTitle("Room: " + topic + " - " + username);
                 chatPanel.removeAll();
                 if (localHistory.containsKey(topic)) {
                     for (Message m : localHistory.get(topic)) {
                         addChatBubble(m);
                     }
                 }
-
                 cardLayout.show(mainPanel, "CHAT");
                 chatPanel.revalidate();
                 chatPanel.repaint();
             });
 
             roomsContainer.add(roomBtn);
-            roomsContainer.add(Box.createVerticalStrut(10)); // Gap between boxes
+            roomsContainer.add(Box.createVerticalStrut(10));
         }
 
         panel.add(new JScrollPane(roomsContainer), BorderLayout.CENTER);
         return panel;
     }
 
-    /* ================= CHAT ROOM ================= */
+    /* ================= CHAT ROOM PANEL ================= */
 
     private JPanel createChatPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 0));
         panel.setBackground(BG_MAIN);
         panel.setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        // Header with Back Button
         JButton backBtn = new JButton("← Back");
         styleButton(backBtn);
-        backBtn.setBackground(BG_PANEL); // Different color for back button
+        backBtn.setBackground(BG_PANEL);
         backBtn.addActionListener(e -> {
             cardLayout.show(mainPanel, "LOBBY");
             setTitle("Lobby - " + username);
@@ -189,7 +182,6 @@ public class ClientApp extends JFrame {
         headerPanel.add(leftHeader, BorderLayout.WEST);
         headerPanel.add(statusLabel, BorderLayout.EAST);
 
-        // ... Rest of the chat panel logic (chatPanel, scrollPane, onlineList) remains the same ...
         chatPanel = new JPanel();
         chatPanel.setLayout(new BoxLayout(chatPanel, BoxLayout.Y_AXIS));
         chatPanel.setBackground(BG_PANEL);
@@ -201,11 +193,15 @@ public class ClientApp extends JFrame {
         onlineList = new JList<>(onlineModel);
         onlineList.setBackground(BG_PANEL);
         onlineList.setForeground(TEXT_MAIN);
+        onlineList.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
         JPanel onlinePanel = new JPanel(new BorderLayout());
         onlinePanel.setPreferredSize(new Dimension(160, 0));
         onlinePanel.setBackground(BG_PANEL);
-        onlinePanel.add(new JLabel(" Online Users"), BorderLayout.NORTH);
+        JLabel onlineTitle = new JLabel(" Online Users");
+        onlineTitle.setForeground(TEXT_SUB);
+        onlineTitle.setBorder(new EmptyBorder(5, 5, 5, 5));
+        onlinePanel.add(onlineTitle, BorderLayout.NORTH);
         onlinePanel.add(new JScrollPane(onlineList), BorderLayout.CENTER);
 
         messageField = styledTextField("Type a message...");
@@ -230,7 +226,7 @@ public class ClientApp extends JFrame {
         return panel;
     }
 
-    /* ================= CHAT BUBBLE ================= */
+    /* ================= UI BUBBLE LOGIC ================= */
 
     private void addChatBubble(Message msg) {
         boolean isMe = msg.getSender().equals(username);
@@ -240,23 +236,23 @@ public class ClientApp extends JFrame {
         bubble.setBorder(new EmptyBorder(8, 14, 8, 14));
         bubble.setMaximumSize(new Dimension(420, Integer.MAX_VALUE));
 
-        JLabel sender = new JLabel(isMe ? "You" : msg.getSender());
-        sender.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        sender.setForeground(TEXT_SUB);
+        JLabel senderLabel = new JLabel(isMe ? "You" : msg.getSender());
+        senderLabel.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        senderLabel.setForeground(TEXT_SUB);
 
-        JLabel content = new JLabel("<html>" + msg.getContent() + "</html>");
-        content.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        content.setForeground(Color.WHITE);
+        JLabel contentLabel = new JLabel("<html>" + msg.getContent() + "</html>");
+        contentLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        contentLabel.setForeground(Color.WHITE);
 
-        JLabel time = new JLabel(timeFormat.format(new Date(msg.getTimestamp())));
-        time.setFont(new Font("Segoe UI", Font.PLAIN, 10));
-        time.setForeground(TEXT_SUB);
-        time.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        JLabel timeLabel = new JLabel(timeFormat.format(new Date(msg.getTimestamp())));
+        timeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+        timeLabel.setForeground(TEXT_SUB);
+        timeLabel.setAlignmentX(Component.RIGHT_ALIGNMENT);
 
-        bubble.add(sender);
-        bubble.add(content);
+        bubble.add(senderLabel);
+        bubble.add(contentLabel);
         bubble.add(Box.createVerticalStrut(4));
-        bubble.add(time);
+        bubble.add(timeLabel);
 
         JPanel wrapper = new JPanel(new FlowLayout(isMe ? FlowLayout.RIGHT : FlowLayout.LEFT));
         wrapper.setBackground(BG_PANEL);
@@ -269,17 +265,10 @@ public class ClientApp extends JFrame {
                 scrollPane.getVerticalScrollBar().setValue(
                         scrollPane.getVerticalScrollBar().getMaximum()
                 ));
+        chatPanel.revalidate();
     }
 
-    /* ================= ONLINE USERS ================= */
-
-    private void updateOnlineUsers(String user) {
-        if (onlineUsers.add(user)) {
-            onlineModel.addElement(user);
-        }
-    }
-
-    /* ================= STYLING ================= */
+    /* ================= STYLING HELPERS ================= */
 
     private JTextField styledTextField(String hint) {
         JTextField field = new JTextField();
@@ -302,9 +291,10 @@ public class ClientApp extends JFrame {
         btn.setForeground(Color.WHITE);
         btn.setFocusPainted(false);
         btn.setBorder(new EmptyBorder(10, 20, 10, 20));
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
     }
 
-    /* ================= LOGIC ================= */
+    /* ================= CORE LOGIC ================= */
 
     private void performLogin(ActionEvent e) {
         try {
@@ -312,6 +302,7 @@ public class ClientApp extends JFrame {
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
 
+            // Launch background thread to listen for server updates
             new Thread(new MessageListener(in, this)).start();
 
             username = userField.getText();
@@ -319,14 +310,46 @@ public class ClientApp extends JFrame {
             out.flush();
 
         } catch (IOException ex) {
-            JOptionPane.showMessageDialog(this, "Cannot connect to server.");
+            JOptionPane.showMessageDialog(this, "Cannot connect to server at " + SERVER_ADDRESS);
+        }
+    }
+
+    // Requirement (e): Public method to allow MessageListener to push data to UI
+    public void handleIncomingObject(Object obj) {
+        if (obj instanceof String) {
+            String raw = (String) obj;
+            // Handle User List synchronization updates
+            if (raw.startsWith("UPDATE_USERS:")) {
+                String[] users = raw.replace("UPDATE_USERS:", "").split(",");
+                SwingUtilities.invokeLater(() -> {
+                    onlineModel.clear();
+                    for (String u : users) {
+                        if (!u.isEmpty()) onlineModel.addElement(u);
+                    }
+                });
+            }
+        } else if (obj instanceof Message) {
+            Message msg = (Message) obj;
+            if ("SUCCESS".equals(msg.getType())) {
+                cardLayout.show(mainPanel, "LOBBY");
+                setTitle("Lobby - " + username);
+            } else if ("CHAT".equals(msg.getType())) {
+                String topic = "General Discussion";
+                localHistory.putIfAbsent(topic, new ArrayList<>());
+                localHistory.get(topic).add(msg);
+
+                if (topic.equals(currentTopic)) {
+                    SwingUtilities.invokeLater(() -> addChatBubble(msg));
+                }
+            }
         }
     }
 
     private void sendMessage() {
         try {
-            if (!messageField.getText().isEmpty()) {
-                out.writeObject(new Message(username, messageField.getText(), "CHAT"));
+            String text = messageField.getText().trim();
+            if (!text.isEmpty()) {
+                out.writeObject(new Message(username, text, "CHAT"));
                 out.flush();
                 messageField.setText("");
             }
@@ -336,39 +359,18 @@ public class ClientApp extends JFrame {
         }
     }
 
-    public void handleIncomingMessage(Message msg) {
-        if ("SUCCESS".equals(msg.getType())) {
-            cardLayout.show(mainPanel, "LOBBY");
-            setTitle("Lobby - " + username);
-            updateOnlineUsers(username);
-
-        } else if ("CHAT".equals(msg.getType())) {
-            //
-            String topic = currentTopic.isEmpty() ? "General Discussion" : currentTopic;
-            localHistory.putIfAbsent(topic, new ArrayList<>());
-            localHistory.get(topic).add(msg);
-
-            // refresh
-            if (topic.equals(currentTopic)) {
-                addChatBubble(msg);
-            }
-        }
-    }
-
     public static void main(String[] args) {
         SwingUtilities.invokeLater(ClientApp::new);
     }
 
-    /* ================= ROUNDED PANEL ================= */
+    /* ================= UI CUSTOM COMPONENTS ================= */
 
     static class RoundedPanel extends JPanel {
         private final Color bg;
-
         RoundedPanel(Color bg) {
             this.bg = bg;
             setOpaque(false);
         }
-
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g;
