@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="RealTimeChat:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/RealTimeChat_jar</output-path>
+    <root id="archive" name="RealTimeChat.jar">
+      <element id="module-output" name="RealTimeChat" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/mysql-connector-j-9.5.0/mysql-connector-j-9.5.0.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>
